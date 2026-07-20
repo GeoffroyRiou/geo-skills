@@ -6,8 +6,10 @@ Les skills sont installés via des liens symboliques vers le dépôt source — 
 
 ## Installation rapide
 
+Le package n’est **pas** publié sur npmjs. Lancer directement depuis GitHub :
+
 ```bash
-npx geo-skills
+npx github:GeoffroyRiou/geo-skills
 ```
 
 Le CLI détecte automatiquement les destinations disponibles et propose un menu interactif.
@@ -19,12 +21,18 @@ Le CLI détecte automatiquement les destinations disponibles et propose un menu 
 
 ## Commandes
 
+Préfixe recommandé pour toutes les commandes :
+
+```bash
+npx github:GeoffroyRiou/geo-skills <commande>
+```
+
 | Commande | Description |
 |----------|-------------|
-| `npx geo-skills` | Installe des skills (alias de `install`) |
-| `npx geo-skills detect` | Liste les destinations détectées sur la machine |
-| `npx geo-skills list` | Liste les skills disponibles dans le dépôt |
-| `npx geo-skills update` | Met à jour le cache local des skills |
+| *(aucune)* / `install` | Installe des skills |
+| `detect` | Liste les destinations détectées sur la machine |
+| `list` | Liste les skills disponibles dans le dépôt |
+| `update` | Met à jour le cache local des skills |
 
 ### Options
 
@@ -41,19 +49,29 @@ Le CLI détecte automatiquement les destinations disponibles et propose un menu 
 
 ```bash
 # Détecter les providers installés
-npx geo-skills detect
+npx github:GeoffroyRiou/geo-skills detect
 
 # Installer tous les skills pour Cursor (global)
-npx geo-skills install --provider cursor
+npx github:GeoffroyRiou/geo-skills install --provider cursor
 
 # Installer un skill précis pour Agents (projet courant)
-npx geo-skills install --provider agents --scope project --skills implement
+npx github:GeoffroyRiou/geo-skills install --provider agents --scope project --skills implement
 
 # Chemin personnalisé, mode non interactif
-npx geo-skills install --dir ~/.cursor/skills --skills implement,to-issues -y
+npx github:GeoffroyRiou/geo-skills install --dir ~/.cursor/skills --skills implement,to-issues -y
 ```
 
 En mode non interactif (CI, script), précisez `--provider`, `--scope` ou `--dir`, et `--skills`.
+
+## Mettre à jour les skills
+
+Les skills installés sont des liens symboliques vers le cache local (`~/.cache/geo-skills/repo`). Après un push sur GitHub :
+
+```bash
+npx github:GeoffroyRiou/geo-skills update
+```
+
+Pour installer un **nouveau** skill ajouté au dépôt, relancer `install`.
 
 ## Destinations détectées
 
@@ -65,7 +83,7 @@ Le CLI cherche les dossiers skills à deux niveaux :
 | Claude Code | `~/.claude/skills` | `.claude/skills` |
 | Agents | `~/.agents/skills` | `.agents/skills` |
 
-La détection remonte l'arborescence depuis le répertoire courant pour trouver les dossiers projet.
+La détection remonte l’arborescence depuis le répertoire courant pour trouver les dossiers projet.
 
 ## Licence
 

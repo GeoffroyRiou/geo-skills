@@ -18,10 +18,10 @@ function printHelp() {
 geo-skills — installer des agent skills
 
 Usage:
-  npx geo-skills [install] [options]
-  npx geo-skills detect
-  npx geo-skills list
-  npx geo-skills update
+  npx github:GeoffroyRiou/geo-skills [install] [options]
+  npx github:GeoffroyRiou/geo-skills detect
+  npx github:GeoffroyRiou/geo-skills list
+  npx github:GeoffroyRiou/geo-skills update
 
 Options:
   -p, --provider <name>  cursor | claude | agents
@@ -32,10 +32,10 @@ Options:
   -h, --help             afficher cette aide
 
 Exemples:
-  npx geo-skills detect
-  npx geo-skills install --provider cursor
-  npx geo-skills install --provider agents --scope project
-  npx geo-skills install --dir ~/.cursor/skills --skills implement
+  npx github:GeoffroyRiou/geo-skills detect
+  npx github:GeoffroyRiou/geo-skills install --provider cursor
+  npx github:GeoffroyRiou/geo-skills install --provider agents --scope project
+  npx github:GeoffroyRiou/geo-skills install --dir ~/.cursor/skills --skills implement
 `);
 }
 
