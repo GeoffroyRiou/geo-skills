@@ -4,9 +4,9 @@ description: >-
   Turn a prompt, sentence, or markdown plan into thin vertical-slice tickets
   (Linear, GitHub Issues, or markdown files). Each issue is a deterministic
   implement-only plan with architecture (reuse/create), SOLID/DRY/simplicity,
-  prefer-deeper-modules guidance, and hard size caps. Use when the user asks to
-  create issues, tickets, or slices from a plan/spec — including right after a
-  grill session.
+  prefer-deeper-modules guidance, TDD-friendly Do steps (RED → GREEN), and hard
+  size caps. Use when the user asks to create issues, tickets, or slices from a
+  plan/spec — including right after a grill session.
 ---
 
 # to-issues
@@ -36,11 +36,12 @@ Extract **testable vertical slices**: one demoable end-to-end outcome each, **as
 Before filing a slice, it must pass:
 
 - Single concern (no unrelated refactors)
-- ≤ 4 files touched (excluding the one test)
+- ≤ 6 files touched (excluding the one test) — soft cap for thinness, not a reason to squash modules
 - ≤ 2 new public symbols
 - Exactly 1 focused test (or one small test file for that slice)
+- Do steps ordered for **TDD when possible**: failing test first (RED), then minimal implementation (GREEN)
 
-Split further if any cap would break.
+Split further if any cap would break. If a listed **Create** needs its own file (class/module), count that file in the plan — never design a slice that forces inlining to stay under the cap.
 
 ## Architecture source
 
@@ -48,7 +49,7 @@ Split further if any cap would break.
 2. If incomplete, search the codebase to fill gaps.
 3. Never invent fake “existing” symbols.
 
-**Create** must name classes, interfaces, and seam/adapter logic **only when a real boundary needs them** (e.g. payment provider). Otherwise keep concrete and thin: few layers/files — not a flat API that exposes internals.
+**Create** must name classes, interfaces, and seam/adapter logic **only when a real boundary needs them** (e.g. payment provider). Otherwise keep concrete and thin: few layers — not a flat API that exposes internals. Prefer a real module/class over a fat inline blob when the behaviour has a clear responsibility; do not skip a Create file just to stay under the touch budget.
 
 When a symbol *is* created, prefer a **deeper** module: small stable public surface that hides real complexity. Never invent extra types “to deepen.”
 
@@ -89,18 +90,22 @@ Create
 - <interface/seam/adapter only if needed>: <one-line purpose>
 
 Do
-1. …
+1. Write the focused failing test for Done when (RED) — skip this step only if TDD clearly does not apply
 2. …
+3. …
 
 Do not
 - Violate SOLID or DRY
 - Add abstractions, files, or refactors not listed above
 - Make the code more complex than required — simplest working code is mandatory
 - Prefer deeper modules (narrow interface, hide complexity) when it does not add complexity or abstractions beyond this plan — simplest working code still wins
-- Exceed the touch limits for this slice
+- Inline or squash a listed Create into another file just to stay under the file cap — if Create needs a module/class file, create that file (ask before exceeding Touch limit)
+- Implement production code before the failing focused test when TDD applies (must be RED → GREEN)
+- Exceed the touch limits for this slice without asking
 
 Touch limit
-- ≤4 files (excl. test), ≤2 new public symbols, 1 focused test, single concern
+- ≤6 files (excl. test), ≤2 new public symbols, 1 focused test, single concern
+- File count is a thinness guide: maintainable Create modules beat minimizing files
 ```
 
 Put the same Do not / Touch limit spirit into every issue so implementers cannot freestyle.

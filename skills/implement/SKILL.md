@@ -3,10 +3,10 @@ name: implement
 description: >-
   Implement a single vertical-slice ticket produced by to-issues (Linear, GitHub
   Issues, or markdown under docs/slices/). Follow the issue body literally:
-  Reuse/Create/Do/Do not/Touch limit, run Done when verification, keep code
-  simplest possible under SOLID and DRY, preferring deeper modules within listed
-  symbols. Use when the user asks to implement, do, or build a slice/issue/ticket
-  from that pipeline.
+  Reuse/Create/Do/Do not/Touch limit, prefer TDD (RED → GREEN) when possible,
+  run Done when verification, keep code simplest possible under SOLID and DRY,
+  preferring deeper modules within listed symbols. Use when the user asks to
+  implement, do, or build a slice/issue/ticket from that pipeline.
 ---
 
 # implement
@@ -57,6 +57,19 @@ Never exceed the issue’s Touch limit without asking first.
 
 If the plan cannot be done within caps: stop and ask (do not quietly expand the slice).
 
+**Never trade maintainability for the file count.** If Create names a class/module that belongs in its own file, create that file. Do **not** inline or squash it into another file just to stay under the cap — ask instead. Simplest working code still wins, but “fewest files” is not the same as “simplest.”
+
+## TDD (prefer when possible)
+
+Default flow for the slice’s focused test: **RED → GREEN**.
+
+1. **RED** — write (or extend) the focused failing test that encodes Done when / Goal. Run it; confirm it fails for the right reason.
+2. **GREEN** — implement the minimal production code (only listed Reuse/Create) until that test passes.
+
+Skip TDD only when it clearly does not apply (no runnable test harness for this slice, pure wiring/docs, or the issue’s Do already forbids it). Do not write production code first then a trailing test when TDD is viable.
+
+Do not expand into extra tests beyond the issue’s one focused test.
+
 ## Git and tickets
 
 Default: write code + tests and run verification only.
@@ -84,9 +97,10 @@ Confirm each; fix or remove drift:
 - **Goal** — diff delivers the one-sentence outcome.
 - **Do** — every numbered step done; none skipped; no extra steps.
 - **Reuse** — existing code touched only via listed Reuse symbols/files.
-- **Create** — new code only via listed Create symbols; purposes match the issue lines.
-- **Do not** — no forbidden abstractions, files, refactors, or scope; simplest working code; deep-module line respected (deepen only within listed symbols).
+- **Create** — new code only via listed Create symbols; purposes match the issue lines; Create modules/classes live in their own files when that is the natural boundary (no inlining to dodge the file cap).
+- **Do not** — no forbidden abstractions, files, refactors, or scope; simplest working code; deep-module line respected (deepen only within listed symbols); no file-cap dodging via inline squash.
 - **Done when** — the check actually proves Goal, not just incidental green.
+- **TDD** — when applicable, focused test existed and failed before production code made it pass (RED → GREEN); no production-first then trailing test.
 - **No scope creep** — no behaviour, routes, views, or cleanups the issue did not ask for.
 - **Prescribed API** — if Create or Do names methods/signatures/responsibilities, match them (e.g. controller must not do work assigned to a Create symbol).
 
@@ -111,8 +125,8 @@ Quick pass on the diff; fix **hard** issues before stopping:
 ## Workflow
 
 1. Load issue; check blockers.
-2. Implement Do steps using only listed Reuse/Create symbols.
+2. Prefer TDD: RED (failing focused test) → GREEN (minimal implementation via listed Reuse/Create). Follow Do steps in that order when they allow it.
 3. Stay inside Touch limit and Do not.
-4. Run verification.
+4. Run verification (test must have been red first when TDD applied).
 5. Pre-review self-check; fix findings.
 6. Minimal report to the user. Stop (or continue only if chaining was requested).
