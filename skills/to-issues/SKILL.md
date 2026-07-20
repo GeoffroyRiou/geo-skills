@@ -51,6 +51,8 @@ Split further if any cap would break. If a listed **Create** needs its own file 
 
 **Create** must name classes, interfaces, and seam/adapter logic **only when a real boundary needs them** (e.g. payment provider). Otherwise keep concrete and thin: few layers — not a flat API that exposes internals. Prefer a real module/class over a fat inline blob when the behaviour has a clear responsibility; do not skip a Create file just to stay under the touch budget.
 
+**Before naming** any Create class, file, method, or variable: check the repo’s naming conventions and follow them. Sources (in order): project rules (`AGENTS.md`, `.cursor/rules`, CONTRIBUTING), linter/formatter configs that encode style, then patterns already used in neighbouring or similar modules. Do not invent a naming style that conflicts with the codebase.
+
 When a symbol *is* created, prefer a **deeper** module: small stable public surface that hides real complexity. Never invent extra types “to deepen.”
 
 Downstream slices that depend on upstream work must **Reuse** symbols the earlier issues create.
@@ -100,6 +102,7 @@ Do not
 - Make the code more complex than required — simplest working code is mandatory
 - Prefer deeper modules (narrow interface, hide complexity) when it does not add complexity or abstractions beyond this plan — simplest working code still wins
 - Inline or squash a listed Create into another file just to stay under the file cap — if Create needs a module/class file, create that file (ask before exceeding Touch limit)
+- Invent naming that conflicts with repo conventions (classes, files, methods, variables)
 - Implement production code before the failing focused test when TDD applies (must be RED → GREEN)
 - Exceed the touch limits for this slice without asking
 
