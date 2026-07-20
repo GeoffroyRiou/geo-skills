@@ -1,0 +1,32 @@
+{
+  "name": "geo-skills",
+  "version": "0.1.0",
+  "description": "Install geo-skills agent skills for Cursor, Claude Code, or Agents",
+  "type": "module",
+  "bin": {
+    "geo-skills": "./bin/geo-skills.js"
+  },
+  "files": [
+    "bin",
+    "lib",
+    "skills"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": [
+    "cursor",
+    "claude",
+    "agents",
+    "skills",
+    "ai"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/GeoffroyRiou/geo-skills.git"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "@inquirer/prompts": "^8.5.2"
+  }
+}
