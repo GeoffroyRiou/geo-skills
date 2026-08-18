@@ -29,6 +29,24 @@ When done: report Done when pass/fail + files touched. Add a short note only if 
 
 Read the full issue body before coding.
 
+## Research
+
+Before touching any code, delegate codebase exploration to a sub-agent to keep the main context small.
+
+Spawn an **Explore** sub-agent for:
+- Finding existing files and symbols listed under Reuse
+- Understanding how a module, class, or function currently works
+- Locating where to insert new code (Create targets)
+- Any open-ended "where is X / how does X work" question
+
+Do **not** instruct the sub-agent which tools to use — it will follow its own search instructions (codegraph, grep, read, etc.). Give it a focused, self-contained question and instruct it to answer with **minimal output**: relevant and complete, but no prose, no re-stating the question, no raw tool dumps — facts only (file paths, signatures, key behaviour).
+
+Do **not** delegate to a sub-agent when:
+- The issue already gives exact file paths and line numbers (no exploration needed)
+- The question requires the full context of the main agent (blocker check, scope decision)
+
+Collect the sub-agent's answer, extract only what is needed (file paths, signatures, key facts), and discard the rest. Do not re-read files the sub-agent already summarised unless you need a specific detail it missed.
+
 ## Scope
 
 Follow the user’s instructions for how many slices to do.
@@ -125,8 +143,9 @@ Quick pass on the diff; fix **hard** issues before stopping:
 ## Workflow
 
 1. Load issue; check blockers.
-2. Prefer TDD: RED (failing focused test) → GREEN (minimal implementation via listed Reuse/Create). Follow Do steps in that order when they allow it.
-3. Stay inside Touch limit and Do not.
-4. Run verification (test must have been red first when TDD applied).
-5. Pre-review self-check; fix findings.
-6. Minimal report to the user. Stop (or continue only if chaining was requested).
+2. **Research** — spawn Explore sub-agent(s) for any codebase exploration needed (Reuse targets, Create insertion points, architecture questions). Extract only key facts; discard raw output.
+3. Prefer TDD: RED (failing focused test) → GREEN (minimal implementation via listed Reuse/Create). Follow Do steps in that order when they allow it.
+4. Stay inside Touch limit and Do not.
+5. Run verification (test must have been red first when TDD applied).
+6. Pre-review self-check; fix findings.
+7. Minimal report to the user. Stop (or continue only if chaining was requested).
