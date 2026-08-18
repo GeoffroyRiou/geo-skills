@@ -84,13 +84,13 @@ One message, two `Task` / general-purpose sub-agents.
 
 - Diff command(s), commit list if any, untracked slice files if WIP
 - Paths of standards docs found + **pipeline rules** + **full smell baseline** pasted
-- Brief: "Report per file/hunk: (a) documented-standard violations (cite file + rule); (b) SOLID/DRY/simplicity breaches; (c) prefer-deeper-modules misses (Shallow Module = judgement unless Do not / repo rule breached); (d) baseline smells (name + quote hunk). Hard vs judgement call. Skip tooling-enforced items and Touch-limit/file-count. For each hard finding: what, where, why it matters (1–2 sentences). Under 350 words."
+- Brief: "Before analysing, spawn an **Explore** sub-agent for any codebase exploration needed to judge findings accurately (understanding modules/symbols touched by the diff, how they currently work, etc.). Give it a focused question; instruct it to answer with minimal output — facts only (file paths, signatures, key behaviour), no prose, no raw tool dumps. Extract only what you need and discard the rest. Then report per file/hunk: (a) documented-standard violations (cite file + rule); (b) SOLID/DRY/simplicity breaches; (c) prefer-deeper-modules misses (Shallow Module = judgement unless Do not / repo rule breached); (d) baseline smells (name + quote hunk). Hard vs judgement call. Skip tooling-enforced items and Touch-limit/file-count. For each hard finding: what, where, why it matters (1–2 sentences). Under 350 words."
 
 **Spec sub-agent** — give:
 
 - Diff command(s) / WIP surface
 - Full slice issue body
-- Brief: "Report: (a) Goal / Done when / Do steps missing or partial; (b) symbols/files not in Reuse or Create (freestyle); (c) Do not violations; (d) behaviour not asked for (scope creep); (e) listed Create/Reuse used wrongly. Quote the issue line for each finding. Skip Touch-limit/file-count entirely. For each hard finding: what, issue line, why it matters for slice integrity (1–2 sentences). Under 350 words."
+- Brief: "Before analysing, spawn an **Explore** sub-agent for any codebase exploration needed to judge findings accurately (understanding modules/symbols touched by the diff, how they currently work, etc.). Give it a focused question; instruct it to answer with minimal output — facts only (file paths, signatures, key behaviour), no prose, no raw tool dumps. Extract only what you need and discard the rest. Then report: (a) Goal / Done when / Do steps missing or partial; (b) symbols/files not in Reuse or Create (freestyle); (c) Do not violations; (d) behaviour not asked for (scope creep); (e) listed Create/Reuse used wrongly. Quote the issue line for each finding. Skip Touch-limit/file-count entirely. For each hard finding: what, issue line, why it matters for slice integrity (1–2 sentences). Under 350 words."
 
 Skip Spec sub-agent if no slice spec.
 
