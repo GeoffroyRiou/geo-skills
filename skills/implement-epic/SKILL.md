@@ -5,12 +5,13 @@ description: >-
   ticket (URL or file), detect dependencies, parallelize independent slices, and
   drive each through a dev→review→fix loop until review passes (or 3 iterations).
   Dev agents use /implement + /caveman; review agents use /slice-review.
-  Commits per slice when clean. Use when the user wants to implement a full epic.
+  Commits per slice when clean. Fail fast if any slice exceeds 3 iterations.
+  Use when the user wants to implement a full epic.
 ---
 
 # implement-epic
 
-Implement all slices of an epic. Architecture: **master** (this skill) → **sub-master** (one per slice) → **dev + reviewer**.
+Implement all slices of an epic. Architecture: **master** (this skill) → **dev / review / fix agents** (spawned directly, no intermediate layer).
 
 ## Input validation
 
@@ -20,7 +21,7 @@ Argument must be a URL or a file path that can be fetched/read. If the argument 
 
 ## State file
 
-Create `/tmp/implement-epic-<sanitized-epic-title>.json` (outside the repo). Update after every status change.
+Create `/tmp/implement-epic-<sanitized-epic-title>.json` (outside the repo). Update after every status change. This is a crash-recovery file only — not a coordination mechanism.
 
 ```json
 {
@@ -34,6 +35,7 @@ Create `/tmp/implement-epic-<sanitized-epic-title>.json` (outside the repo). Upd
       "blockedBy": ["<slice-id>"],
       "status": "pending|in-progress|done|failed",
       "iterations": 0,
+      "files": [],
       "failReason": null
     }
   ]
@@ -60,89 +62,105 @@ For each slice, in order:
 
 Build a DAG. Slices with all dependencies satisfied are **ready**.
 
-## Detect file zone overlaps
-
-Inspect the `Create` / `Touch` / file fields of each ready slice. Slices that share files must be **sequenced** (later one waits for earlier commit). Slices with disjoint file sets can run **in parallel**.
-
-Skip this step if file information is unavailable in slice bodies — fall back to dependency ordering only.
-
 ## Master loop
 
 Repeat until all slices are `done` or `failed`:
 
 1. Find all **ready** slices (deps satisfied, status `pending`).
-2. Split ready slices into parallel-safe groups (no shared files) and sequenced groups.
-3. Mark them `in-progress` in the state file.
-4. Spawn sub-master agents for all parallel-safe ready slices **simultaneously** (one Agent call per slice, all in a single response).
-5. When each sub-master returns, update state (`done` or `failed`), then go to step 1 to unlock newly ready slices.
+2. Group them: slices sharing files must be **sequenced** (only the first in each overlapping group is ready this round). Slices with disjoint file sets can run **in parallel**.
+   - File overlap detection uses the `files` field populated after the first dev run. On the first round, assume no overlaps and run all ready slices in parallel.
+3. Mark selected slices `in-progress` in the state file.
+4. Spawn one **dev agent** per selected slice, all in background simultaneously (one Agent call per slice, all in a single response).
+5. Wait for all dev notifications. For each:
+   - Record `files` from the `FILES:` marker in the state file.
+   - Spawn a **review agent** for that slice in background (passing the files list).
+6. Wait for all review notifications. For each:
+   - If `CLEAN: true` → commit the slice, mark `done`.
+   - If `CLEAN: false` → increment `iterations`. If `iterations >= 3` → **fail fast**: stop the entire epic, report findings, exit.
+   - Otherwise → spawn a **fix agent** for that slice in background (passing filtered findings).
+7. Wait for all fix notifications. For each, spawn a new **review agent** (step 5 review logic).
+8. Update state file. Go to step 1.
 
-## Sub-master agent
+## Agent prompts
 
-When launching a sub-master for a slice, pass this prompt:
+### Dev agent
+
+Spawn as background Agent. Prompt:
 
 ---
-You are the sub-master for slice **[id]: [title]**.
+Activate /caveman, then run /implement on slice [source]. Do not commit.
 
-Slice source: [source]
+When done, output exactly:
+FILES: [comma-separated list of files you created or modified]
+---
 
-Run the dev→review cycle up to **3 times**. Keep a running list of findings to fix across iterations.
+### Review agent
 
-**Each iteration:**
+Spawn as background Agent. Prompt:
 
-1. **Dev** — spawn a sub-agent with this instruction:
-   > Activate /caveman, then run /implement on slice [source]. Do not commit.
+---
+Run /slice-review on the current WIP (uncommitted changes) for slice [source].
+Scope your review strictly to these files: [files list from dev agent].
+Do not flag issues in other files. Review in WIP mode (no fixed point).
 
-2. **Review** — once the dev agent completes, spawn a separate sub-agent:
-   > Run /slice-review on the current WIP (uncommitted changes) for slice [source]. Review in WIP mode (no fixed point). Return findings split as: **Hard:** [...] / **Judgment:** [...].
+When done, output exactly:
+CLEAN: true
+or
+CLEAN: false
+FINDINGS:
+Hard: [list of hard findings with file:line and detail]
+Judgment: [list of judgment findings with file:line and detail — only include if they clearly improve optimization, clarity, or maintainability]
+---
 
-3. **Filter findings:**
-   - **Hard** → always fix.
-   - **Judgment** → fix only if the reviewer explicitly notes it improves optimization, clarity, or maintainability.
-   - No actionable findings remaining → cycle complete. Commit and report done (see below).
+### Fix agent
 
-4. **If actionable findings remain**, pass them to a new dev sub-agent:
-   > Activate /caveman. Fix these findings on slice [source]: [filtered finding list]. Do not commit.
-   Then go to step 2.
+Spawn as background Agent. Prompt:
 
-**If 3 iterations pass without a clean review:**
+---
+Activate /caveman. Fix the following findings on slice [source]. Do not commit.
 
-Stop. Do not commit. Report:
+[filtered finding list — Hard findings always included; Judgment findings only if explicitly noted as improving optimization, clarity, or maintainability]
+
+When done, output exactly:
+FILES: [comma-separated list of files you modified]
+---
+
+## Fail fast
+
+If any slice reaches 3 iterations without a clean review:
+
+1. Stop the master loop immediately.
+2. Do not commit any in-progress work.
+3. Report:
+
 ```
 FAILED: slice [id] — [title]
 Reason: did not converge after 3 iterations.
 Remaining findings after iteration 3:
-[full finding list with file/line and detail]
+[full finding list with file:line and detail]
+
+implement-epic stopped. No further slices will be processed.
+Completed before failure:
+✓ slice-1 — title (2 iter)
+✓ slice-2 — title (1 iter)
 ```
 
-**On success (clean review or no actionable findings):**
+## Commit
 
-Commit all changes for this slice:
+When a slice passes review, commit only its files:
+
 ```
-git add <files touched by this slice>
+git add <files from FILES: marker>
 git commit -m "feat([id]): [title]"
 ```
 
-Report: `DONE: slice [id] — [title]. [N] iteration(s). Files: [list].`
-
----
-
 ## Final output
 
-After all slices complete, print a succinct summary:
-
-```
-implement-epic: [N] done, [M] failed.
-
-✓ slice-1 — title (2 iter)
-✓ slice-2 — title (1 iter)
-✗ slice-3 — title
-  Stopped at iteration 3. Remaining findings:
-  - [Hard] src/foo.ts:42 — missing null check (risk: runtime crash on empty input)
-  - [Judgment] src/bar.ts:18 — shallow module (callers know internal state)
-```
-
-If all succeeded: single line is enough.
+If all slices complete successfully:
 
 ```
 implement-epic complete. [N] slices done.
+
+✓ slice-1 — title (1 iter)
+✓ slice-2 — title (2 iter)
 ```
