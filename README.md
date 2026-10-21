@@ -83,6 +83,12 @@ Le CLI cherche les dossiers skills à deux niveaux :
 | Claude Code | `~/.claude/skills` | `.claude/skills` |
 | Agents | `~/.agents/skills` | `.agents/skills` |
 
+Le dossier courant est toujours proposé (`.cursor/skills`, `.claude/skills`, `.agents/skills`), même s'il n'existe pas encore. Pour y installer directement, par exemple dans un repo :
+
+```bash
+npx github:GeoffroyRiou/geo-skills install --here --provider claude
+```
+
 La détection remonte l’arborescence depuis le répertoire courant pour trouver les dossiers projet.
 
 ## Licence
