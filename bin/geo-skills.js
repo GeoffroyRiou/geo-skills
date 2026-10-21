@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { CACHE_DIR, PROVIDER_LABELS, PROVIDER_NAMES } from '../lib/constants.js';
-import { discoverInstallTargets, resolveInstallTarget } from '../lib/discover.js';
+import { discoverInstallTargets, resolveCwdTargets, resolveInstallTarget } from '../lib/discover.js';
 import { ensureRepo } from '../lib/download.js';
 import { installSkills } from '../lib/install.js';
 import { chooseMany, chooseOne } from '../lib/prompt.js';
@@ -26,6 +26,7 @@ Usage:
 Options:
   -p, --provider <name>  cursor | claude | agents
       --scope <name>     project | global (si plusieurs destinations)
+      --here             installer dans le dossier courant (ex: .claude/skills du repo)
       --dir <path>       chemin explicite (contourne la détection)
   -s, --skills <names>   skills séparés par des virgules (défaut: tous)
   -y, --yes              écraser sans confirmation
@@ -35,6 +36,7 @@ Exemples:
   npx github:GeoffroyRiou/geo-skills detect
   npx github:GeoffroyRiou/geo-skills install --provider cursor
   npx github:GeoffroyRiou/geo-skills install --provider agents --scope project
+  npx github:GeoffroyRiou/geo-skills install --here --provider claude
   npx github:GeoffroyRiou/geo-skills install --dir ~/.cursor/skills --skills implement
 `);
 }
@@ -45,6 +47,7 @@ function parseArgs(argv) {
     provider: null,
     scope: null,
     dir: null,
+    here: false,
     skills: null,
     yes: false,
     help: false,
@@ -62,6 +65,11 @@ function parseArgs(argv) {
 
     if (arg === '-y' || arg === '--yes') {
       args.yes = true;
+      continue;
+    }
+
+    if (arg === '--here') {
+      args.here = true;
       continue;
     }
 
@@ -143,6 +151,24 @@ async function resolveTargetChoice(args, targets) {
       scope: args.scope ?? undefined,
       dir: args.dir,
     });
+  }
+
+  if (args.here) {
+    if (args.provider) {
+      assertProvider(args.provider);
+    }
+    const [first, ...others] = resolveCwdTargets({ targets, provider: args.provider });
+    if (!others.length) {
+      return first;
+    }
+    const choices = [first, ...others];
+    return chooseOne({
+      title: 'Quel provider pour le dossier courant ?',
+      options: choices.map((target) => ({
+        value: target.key,
+        label: `${target.label} → ${target.dir} (${target.source})`,
+      })),
+    }).then((key) => choices.find((target) => target.key === key));
   }
 
   if (args.provider) {
