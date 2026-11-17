@@ -19,7 +19,18 @@ Be concise with the user. Smallest understandable chat output.
 
 No length limit on code or tests written.
 
-When done: report Done when pass/fail + files touched. Add a short note only if something unusual happened (blocker override, tiny typo/path fix, stopped to ask).
+### Final report
+
+The user reads the diff in their own tool. Do **not** list files touched, tests added, or a recap of the ticket.
+
+Report only, in this order, skipping empty sections:
+
+1. **Deviations**: only what failed, was blocked, or diverged from the issue (Done when failing, blocker override, tiny typo/path fix, Do step skipped or adapted). One short line each. If nothing: omit the section entirely.
+2. **To decide**: only when a problem needs the user's call: give enough detail to decide (context, options, your recommendation). Otherwise omit.
+3. **How it works**: a clear, concise walkthrough of the added code following the execution flow, so the user knows in which order to read and how to review/test it. Name the real symbols. Example shape: "`XxxValidator` injected into `YyyController`. `YyyController.store` calls it to validate the request, then passes the data to `ZzzService.create` to persist and dispatch `ZzzCreated`." A few lines or a short numbered flow; no code dumps.
+4. **Manual QA**: only when the slice is testable through the UI: short numbered steps (where to go, what to do, what to expect).
+
+Keep it simple and concise.
 
 ## Load the issue
 
@@ -148,4 +159,4 @@ Quick pass on the diff; fix **hard** issues before stopping:
 4. Stay inside Touch limit and Do not.
 5. Run verification (test must have been red first when TDD applied).
 6. Pre-review self-check; fix findings.
-7. Minimal report to the user. Stop (or continue only if chaining was requested).
+7. Final report (see **Final report**). Stop (or continue only if chaining was requested).
