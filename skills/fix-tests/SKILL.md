@@ -36,10 +36,10 @@ Standalone by default: green whatever the user scoped (full suite, one runner, o
 
 If the failures come from a `to-issues` / `implement` slice:
 
-- Stay inside that issue’s Goal / Reuse / Create / Do / Do not / Touch limit
-- Prefer fixing production code listed in the plan over rewriting the focused test
+- Stay inside that issue’s Goal / Reuse / Create / Do / Do not / Scope
+- Prefer fixing production code listed in the plan over rewriting the slice's tests
 - Do not expand into extra tests, refactors, or files the slice did not ask for
-- If a correct fix needs more than the Touch limit, stop and ask
+- If a correct fix needs to go beyond the slice Scope (code outside Reuse / Create), stop and ask
 
 ## Discover runners and conventions
 

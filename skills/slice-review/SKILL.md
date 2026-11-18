@@ -1,11 +1,9 @@
 ---
 name: slice-review
 description: >-
-  Two-axis review of changes from a to-issues / implement slice: Standards
-  (repo docs, SOLID/DRY/simplicity, prefer-deeper-modules, Fowler smell baseline)
-  and Spec (literal fidelity to the slice ticket: Goal, Reuse, Create, Do, Do
-  not, Done when). Runs both axes in parallel sub-agents. Use when reviewing a
-  slice, vertical-slice PR/WIP, or work produced by implement / to-issues.
+  Two-axis review (Standards and Spec fidelity) of a to-issues / implement
+  slice, run in parallel sub-agents. Use when reviewing a slice, vertical-slice
+  PR/WIP, or work produced by implement / to-issues.
 ---
 
 # slice-review
@@ -25,7 +23,9 @@ Sub-agent briefs stay short; final report stays under two tight sections + one s
 
 **Hard findings** get one short block each (not a one-liner): what broke, where (file/hunk or issue line), and **why it matters** (risk, maintenance, or slice integrity). Judgement calls stay one line.
 
-Do **not** report Touch-limit / file-count breaches — they pollute the report. Ignore that section of the issue for review purposes.
+Do **not** report file counts: there is no file budget. Scope drift (code outside Reuse / Create, behaviour beyond Goal) is already covered by the Spec axis.
+
+**Plan vs implementation:** the ticket pre-decides the design, so a Standards finding can come from the ticket itself. Tag each finding `[plan]` when the code follows the ticket literally and the problem is in the ticket's design, `[impl]` otherwise. `[plan]` findings are fixed by amending the ticket (or with the user's approval), never by silently diverging from it; they also show where `to-issues` needs to plan better.
 
 ## Process
 
@@ -47,7 +47,7 @@ Same rules as `implement`:
 2. Exactly one clear pointer in the message or focused file → use it.
 3. Else ask once.
 
-Fetch the full issue body. The spec **is** that body (Goal / Done when / Reuse / Create / Do / Do not). Do not use `docs/agents/issue-tracker.md` or generic PRDs unless the user points at them as the slice source.
+Fetch the full issue body. The spec **is** that body (Goal / Done when / Context / Reuse / Create / Design / Tests / Do / Do not / Scope). Do not use `docs/agents/issue-tracker.md` or generic PRDs unless the user points at them as the slice source.
 
 If no slice issue is available and the user says there isn’t one, skip the Spec sub-agent and report “no slice spec”.
 
@@ -84,13 +84,14 @@ One message, two `Task` / general-purpose sub-agents.
 
 - Diff command(s), commit list if any, untracked slice files if WIP
 - Paths of standards docs found + **pipeline rules** + **full smell baseline** pasted
-- Brief: "Before analysing, spawn an **Explore** sub-agent for any codebase exploration needed to judge findings accurately (understanding modules/symbols touched by the diff, how they currently work, etc.). Give it a focused question; instruct it to answer with minimal output — facts only (file paths, signatures, key behaviour), no prose, no raw tool dumps. Extract only what you need and discard the rest. Then report per file/hunk: (a) documented-standard violations (cite file + rule); (b) SOLID/DRY/simplicity breaches; (c) prefer-deeper-modules misses (Shallow Module = judgement unless Do not / repo rule breached); (d) baseline smells (name + quote hunk). Hard vs judgement call. Skip tooling-enforced items and Touch-limit/file-count. For each hard finding: what, where, why it matters (1–2 sentences). Under 350 words."
+- Full slice issue body (to tell `[plan]` from `[impl]` findings)
+- Brief: "Read only the code needed to judge (touched files and their direct collaborators); no broad exploration. Then report per file/hunk: (a) documented-standard violations (cite file + rule); (b) SOLID/DRY/simplicity breaches; (c) prefer-deeper-modules misses (Shallow Module = judgement unless Do not / repo rule breached); (d) baseline smells (name + quote hunk). Hard vs judgement call. Tag each finding [plan] if the code follows the issue literally and the problem is in the issue's design else [impl]. Skip tooling-enforced items and file counts. For each hard finding: what, where, why it matters (1–2 sentences). Under 350 words."
 
 **Spec sub-agent** — give:
 
 - Diff command(s) / WIP surface
 - Full slice issue body
-- Brief: "Before analysing, spawn an **Explore** sub-agent for any codebase exploration needed to judge findings accurately (understanding modules/symbols touched by the diff, how they currently work, etc.). Give it a focused question; instruct it to answer with minimal output — facts only (file paths, signatures, key behaviour), no prose, no raw tool dumps. Extract only what you need and discard the rest. Then report: (a) Goal / Done when / Do steps missing or partial; (b) symbols/files not in Reuse or Create (freestyle); (c) Do not violations; (d) behaviour not asked for (scope creep); (e) listed Create/Reuse used wrongly. Quote the issue line for each finding. Skip Touch-limit/file-count entirely. For each hard finding: what, issue line, why it matters for slice integrity (1–2 sentences). Under 350 words."
+- Brief: "Read only the code needed to judge (touched files and their direct collaborators); no broad exploration. Then report: (a) Goal / Done when / Do steps missing or partial, Design rules (logic, edge cases, decisions, mirror file) not followed, listed Tests cases missing; (b) symbols/files not in Reuse or Create (freestyle); (c) Do not violations; (d) behaviour not asked for (scope creep); (e) listed Create/Reuse used wrongly. Quote the issue line for each finding. Skip file counts entirely. For each hard finding: what, issue line, why it matters for slice integrity (1–2 sentences). Under 350 words."
 
 Skip Spec sub-agent if no slice spec.
 

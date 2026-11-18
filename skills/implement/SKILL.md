@@ -1,23 +1,19 @@
 ---
 name: implement
 description: >-
-  Implement a single vertical-slice ticket produced by to-issues (Linear, GitHub
-  Issues, or markdown under docs/slices/). Follow the issue body literally:
-  Reuse/Create/Do/Do not/Touch limit, prefer TDD (RED → GREEN) when possible,
-  run Done when verification, keep code simplest possible under SOLID and DRY,
-  preferring deeper modules within listed symbols. Use when the user asks to
+  Implement one slice ticket produced by to-issues (Linear, GitHub Issues, or
+  docs/slices/ markdown) by following its pre-decided design literally, TDD
+  first, asking before any divergence from the plan. Use when the user asks to
   implement, do, or build a slice/issue/ticket from that pipeline.
 ---
 
 # implement
 
-Implement code from a `to-issues` ticket. Do not freestyle architecture.
+Execute a `to-issues` ticket. The ticket already holds every design decision; your job is faithful execution, not design.
 
 ## User-facing output
 
-Be concise with the user. Smallest understandable chat output.
-
-No length limit on code or tests written.
+Be concise with the user. Smallest understandable chat output. No length limit on code or tests written.
 
 ### Final report
 
@@ -25,138 +21,67 @@ The user reads the diff in their own tool. Do **not** list files touched, tests 
 
 Report only, in this order, skipping empty sections:
 
-1. **Deviations**: only what failed, was blocked, or diverged from the issue (Done when failing, blocker override, tiny typo/path fix, Do step skipped or adapted). One short line each. If nothing: omit the section entirely.
-2. **To decide**: only when a problem needs the user's call: give enough detail to decide (context, options, your recommendation). Otherwise omit.
-3. **How it works**: a clear, concise walkthrough of the added code following the execution flow, so the user knows in which order to read and how to review/test it. Name the real symbols. Example shape: "`XxxValidator` injected into `YyyController`. `YyyController.store` calls it to validate the request, then passes the data to `ZzzService.create` to persist and dispatch `ZzzCreated`." A few lines or a short numbered flow; no code dumps.
-4. **Manual QA**: only when the slice is testable through the UI: short numbered steps (where to go, what to do, what to expect).
-
-Keep it simple and concise.
+1. **Deviations**: what failed, was blocked, or diverged from the issue (Done when failing, blocker override, ticket typo fix, divergence approved by the user). One short line each.
+2. **To decide**: only when a problem needs the user's call: context, options, your recommendation.
+3. **How it works**: concise walkthrough of the added code following the execution flow, naming the real symbols, so the user knows in which order to read and how to review/test it. Example shape: "`XxxValidator` injected into `YyyController`. `YyyController.store` calls it to validate the request, then passes the data to `ZzzService.create` to persist and dispatch `ZzzCreated`." A few lines; no code dumps.
+4. **Manual QA**: only when the slice is testable by the user (UI, endpoint, CLI): short numbered steps (where to go, what to do, what to expect). Include any Done when check you could not run yourself.
 
 ## Load the issue
 
 1. Prefer an explicit Linear id/URL, GitHub `#n`/URL, or markdown path.
 2. If exactly one clear pointer is in the message or focused file, use it.
-3. Otherwise ask once — do not pick among multiple slices silently.
+3. Otherwise ask once; never pick among multiple slices silently.
 
 Read the full issue body before coding.
 
-## Research
+**How many slices:** follow the user's instructions. If none: implement **one** slice, then stop. Chain only if they say "do all" / "next until done".
 
-Before touching any code, delegate codebase exploration to a sub-agent to keep the main context small.
+**Blockers:** if the issue has `Blocked by: …` and that work is not done, **refuse**. Proceed only if the user says "ignore blockers" / "do it anyway".
 
-Spawn an **Explore** sub-agent for:
-- Finding existing files and symbols listed under Reuse
-- Understanding how a module, class, or function currently works
-- Locating where to insert new code (Create targets)
-- Any open-ended "where is X / how does X work" question
+## Read the code
 
-Do **not** instruct the sub-agent which tools to use — it will follow its own search instructions (codegraph, grep, read, etc.). Give it a focused, self-contained question and instruct it to answer with **minimal output**: relevant and complete, but no prose, no re-stating the question, no raw tool dumps — facts only (file paths, signatures, key behaviour).
+The issue gives exact paths and signatures, so read directly: the Reuse files, the Mirror file, the test helpers listed under Tests, and the call sites named in Create. Read only the parts you need.
 
-Do **not** delegate to a sub-agent when:
-- The issue already gives exact file paths and line numbers (no exploration needed)
-- The question requires the full context of the main agent (blocker check, scope decision)
-
-Collect the sub-agent's answer, extract only what is needed (file paths, signatures, key facts), and discard the rest. Do not re-read files the sub-agent already summarised unless you need a specific detail it missed.
-
-## Scope
-
-Follow the user’s instructions for how many slices to do.
-
-If none: implement **one** slice, then stop. Chain only if they say “do all” / “next until done”.
-
-## Blockers
-
-If the issue has `Blocked by: …` and that work is not done: **refuse**.
-
-Proceed only if the user says “ignore blockers” / “do it anyway”.
+Spawn an **Explore** sub-agent only for a question the issue does not answer and that needs a broad search. Give it a focused, self-contained question and ask for facts only (paths, signatures, key behaviour), no prose. If such a question exists, the plan is probably incomplete: see **Fidelity**.
 
 ## Fidelity
 
-1. **First rule:** implement exactly Goal / Reuse / Create / Do / Do not / Touch limit.
-2. Tiny obvious fixes only (typos, wrong paths that clearly match existing files) — no redesign.
-3. Anything else unclear or impossible: stop and ask once.
+1. **Implement exactly** Goal / Context / Reuse / Create / Design / Tests / Do / Do not / Scope. The design is final: paths, signatures, public/private split, Mirror pattern, Logic, edge-case behaviour, Decisions, test cases. Do not redesign, rename, or pick an alternative you prefer. Copy the Mirror file's structure and conventions.
+2. **Any divergence from the plan: ask first.** If the plan cannot be followed exactly, or following it would be wrong (a Reuse symbol or signature does not exist as written, the Mirror file contradicts the plan, a Logic rule conflicts with the real code, a test case cannot pass as specified, a decision is missing, extra files/symbols/behaviour are needed), stop **before** writing the divergent code and ask: what the issue says, what the code shows, options, your recommendation. Never diverge silently, even when the fix looks obvious. Resume only with the user's answer.
+3. Only exception: a pure typo in the issue (a path or symbol misspelled that unambiguously matches exactly one existing file or symbol). Fix it and list it under Deviations.
 
-Respect SOLID, DRY, and simplest-possible code as stated in Do not.
+Everything the plan leaves to code-level craft (local variable names, statement order inside a method) follows the Mirror file and repo conventions, with SOLID, DRY, and simplest working code. Never inline or squash a Create module into another file. Deepen modules only within listed symbols; never invent types, files, or seams.
 
-Prefer **deeper** modules when possible: small stable interface that hides complexity; avoid shallow APIs (callers knowing internals for little payoff). Deepen only **within listed Reuse/Create symbols** — never invent types, files, or seams to deepen. If the ticket already prescribes the API, follow it. When deep vs simple conflict, **simplest working code wins**.
+Legacy tickets with a `Touch limit` section: apply its single-concern / one-test rules, ignore the file count.
 
-## Touch limit
+## TDD
 
-Never exceed the issue’s Touch limit without asking first.
+Default: **RED, then GREEN**.
 
-If the plan cannot be done within caps: stop and ask (do not quietly expand the slice).
+1. **RED**: write every test case listed under Tests. Run them; confirm they fail for the right reason.
+2. **GREEN**: implement the minimal production code (only listed Reuse/Create) until they pass, following the Do steps in order.
 
-**Never trade maintainability for the file count.** If Create names a class/module that belongs in its own file, create that file. Do **not** inline or squash it into another file just to stay under the cap — ask instead. Simplest working code still wins, but “fewest files” is not the same as “simplest.”
+More tests are allowed for behaviour of this brick; never fewer than listed. Do not test code outside Reuse / Create.
 
-## TDD (prefer when possible)
-
-Default flow for the slice’s focused test: **RED → GREEN**.
-
-1. **RED** — write (or extend) the focused failing test that encodes Done when / Goal. Run it; confirm it fails for the right reason.
-2. **GREEN** — implement the minimal production code (only listed Reuse/Create) until that test passes.
-
-Skip TDD only when it clearly does not apply (no runnable test harness for this slice, pure wiring/docs, or the issue’s Do already forbids it). Do not write production code first then a trailing test when TDD is viable.
-
-Do not expand into extra tests beyond the issue’s one focused test.
+Skip TDD only when it clearly does not apply (no runnable harness for this slice, pure wiring/docs, or Do says so). Never write production code first then a trailing test when TDD is viable.
 
 ## Git and tickets
-
-Default: write code + tests and run verification only.
 
 **Do not** create a branch, commit, open a PR, or change ticket status unless the user explicitly asks.
 
 ## Verification
 
-1. If Done when names a command or check — run that.
-2. Else run the issue’s focused test(s).
-3. Must pass before stopping successfully.
+1. Run the Done when command/check, else the slice's tests. Must pass before stopping successfully.
+2. A Done when check you cannot run (user-facing): put it under Manual QA.
 
-If stuck in a fix loop and cannot resolve: **stop and ask**. Do not thrash.
+Stuck in a fix loop: **stop and ask**. Do not thrash.
 
-## Pre-review self-check
+## Self-check (before reporting)
 
-After verification passes, audit the diff against the issue **before** reporting done. Same bar as `slice-review` — fix what you find; do not hand off known gaps.
+Re-read the issue, then your diff (`git diff HEAD` + untracked slice files). Fix any gap before reporting:
 
-Surface: `git diff HEAD`, `git diff --cached`, and untracked files for this slice.
+- **Plan coverage:** every Do step, Create symbol (with its Public signature and Called by site), Logic rule, edge-case behaviour, Decision, and listed test case is in the diff. Done when actually proves Goal.
+- **Nothing extra:** no file, symbol, public method, behaviour, refactor, or cleanup the issue does not list.
+- **Craft in unplanned details:** no duplication, no dead code, no speculative generality, conventions of the Mirror file respected.
 
-### Spec (issue fidelity)
-
-Confirm each; fix or remove drift:
-
-- **Goal** — diff delivers the one-sentence outcome.
-- **Do** — every numbered step done; none skipped; no extra steps.
-- **Reuse** — existing code touched only via listed Reuse symbols/files.
-- **Create** — new code only via listed Create symbols; purposes match the issue lines; Create modules/classes live in their own files when that is the natural boundary (no inlining to dodge the file cap).
-- **Do not** — no forbidden abstractions, files, refactors, or scope; simplest working code; deep-module line respected (deepen only within listed symbols); no file-cap dodging via inline squash.
-- **Done when** — the check actually proves Goal, not just incidental green.
-- **TDD** — when applicable, focused test existed and failed before production code made it pass (RED → GREEN); no production-first then trailing test.
-- **No scope creep** — no behaviour, routes, views, or cleanups the issue did not ask for.
-- **Prescribed API** — if Create or Do names methods/signatures/responsibilities, match them (e.g. controller must not do work assigned to a Create symbol).
-
-### Standards (pipeline bar)
-
-Quick pass on the diff; fix **hard** issues before stopping:
-
-- SOLID, DRY, simplest working code.
-- No speculative generality — nothing invented outside Reuse/Create.
-- Within listed symbols: prefer narrow public surface over callers knowing internals.
-- Obvious smells in **new** code: duplicated logic, feature envy across the slice boundary, long message chains, middle-man pass-through — fix when cheap and inside the slice.
-
-**Judgement calls** (Shallow Module, naming nits): fix if trivial; otherwise leave — do not thrash.
-
-### If self-check fails
-
-1. Fix in place.
-2. Re-run verification.
-3. Re-run self-check once.
-4. Still blocked → **stop and ask** (do not loop).
-
-## Workflow
-
-1. Load issue; check blockers.
-2. **Research** — spawn Explore sub-agent(s) for any codebase exploration needed (Reuse targets, Create insertion points, architecture questions). Extract only key facts; discard raw output.
-3. Prefer TDD: RED (failing focused test) → GREEN (minimal implementation via listed Reuse/Create). Follow Do steps in that order when they allow it.
-4. Stay inside Touch limit and Do not.
-5. Run verification (test must have been red first when TDD applied).
-6. Pre-review self-check; fix findings.
-7. Final report (see **Final report**). Stop (or continue only if chaining was requested).
+Then re-run verification once. Still failing or unsure: **stop and ask** (no loop).

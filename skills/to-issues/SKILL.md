@@ -1,123 +1,187 @@
 ---
 name: to-issues
 description: >-
-  Turn a prompt, sentence, or markdown plan into thin vertical-slice tickets
-  (Linear, GitHub Issues, or markdown files). Each issue is a deterministic
-  implement-only plan with architecture (reuse/create), SOLID/DRY/simplicity,
-  prefer-deeper-modules guidance, TDD-friendly Do steps (RED → GREEN), and hard
-  size caps. Use when the user asks to create issues, tickets, or slices from a
-  plan/spec — including right after a grill session.
+  Turn a prompt or plan into implementation-ready vertical-slice tickets
+  (Linear, GitHub Issues, or markdown) where the whole design is pre-decided,
+  so a smaller model implements them without design choices. Use when the user
+  asks to create issues, tickets, or slices from a plan/spec, including right
+  after a grill session.
 ---
 
 # to-issues
 
 Create tickets only. Do not implement.
 
+## Core principle: the thinking happens here
+
+Issues are executed by a **less capable implementer** (e.g. Sonnet instead of Opus). It must reach the same result a strong model would, by following the ticket. So every design decision is made **in the ticket**, not during implementation:
+
+- If the implementer would have to **choose** something (file, name, signature, pattern, data flow, error handling, edge-case behaviour, test cases), the ticket decides it.
+- Anything a reviewer could flag (SOLID/DRY breach, shallow module, smell, naming conflict, missing edge case, wrong layer) must be resolved in the plan before filing.
+- Target: the generated code gets **little to no review feedback**. A review finding on a faithfully implemented ticket is a planning bug.
+
+**Who decides what:**
+
+- **Grill decisions are settled.** to-issues normally runs right after a grill session: every decision taken there (product and technical) goes into the tickets as is. Do not re-decide, reinterpret, or ask about them again. The same goes for `CONTEXT.md` terms and `docs/adr/` decisions.
+- **Technical gaps** the grill did not cover (structure, patterns, signatures, internal error handling): decide them yourself from the code and the design rules below.
+- **Product gaps** (what end users see, data kept or lost, scope) that neither the grill nor the input settles: rare after a grill, but never guess them: ask the user in one batched round, with your recommendation for each, before writing bodies.
+
+Banned in issue bodies (each one hands a decision to the implementer): "e.g.", "maybe", "if needed", "as appropriate", "or similar", "something like", "handle errors properly", "add tests". Replace with the concrete decision.
+
 ## User-facing output
 
 Be concise with the user. Smallest understandable chat output.
 
-No length limit on issue bodies, filed tickets, or code written into those tickets.
+No length limit on issue bodies, filed tickets, or code written into those tickets. Completeness beats brevity in the body.
 
 ## Destination
 
-1. If the user names Linear, GitHub, or Markdown — use that.
+1. If the user names Linear, GitHub, or Markdown, use that.
 2. Else prefer the tracker the repo already uses.
-3. If unclear: Linear → GitHub → Markdown.
+3. If unclear: Linear, then GitHub, then Markdown.
 
-**Linear team / GitHub repo:** prompt override → current GitHub repo / sole Linear team → ask once if multiple Linear teams.
+**Linear team / GitHub repo:** prompt override, else current GitHub repo / sole Linear team, else ask once if multiple Linear teams.
 
 **Labels (Linear/GitHub):** parent `epic`, children `slice`, plus any labels from the prompt. Markdown: no labels.
 
 ## Slices
 
-Extract **testable vertical slices**: one demoable end-to-end outcome each, **as thin as possible**.
+Extract **vertical slices**: each slice is a **small, cohesive logical brick** (one responsibility, one reason to change) that delivers an observable outcome, **testable on its own when possible**.
+
+Size by cohesion, not by file count. A slice touches whatever files its brick naturally needs (its Reuse + Create). Never squash modules together or split them apart to hit a number.
 
 Before filing a slice, it must pass:
 
-- Single concern (no unrelated refactors)
-- ≤ 6 files touched (excluding the one test) — soft cap for thinness, not a reason to squash modules
-- ≤ 2 new public symbols
-- Exactly 1 focused test (or one small test file for that slice)
-- Do steps ordered for **TDD when possible**: failing test first (RED), then minimal implementation (GREEN)
+- **One brick:** Goal fits in one sentence without "and" / "also" / "plus". If it needs a conjunction, split.
+- **One concern:** every Create symbol and every Do step serves that Goal. No unrelated refactors, cleanups, or "while we're here" work.
+- **Testable when possible:** the brick can be checked on its own, ideally by the user (a visible result to try: screen, endpoint, CLI output), otherwise by automated tests (unit tests are fine). Done when states that check as concrete pass/fail. If neither makes sense (pure wiring, config, docs), Done when is still one concrete pass/fail check.
+- **Tests:** no limit on the number of automated tests. Plan as many as the brick's behaviour needs (main case, edge cases, errors), all targeting this brick.
+- **TDD order:** Do steps go failing test first (RED), then minimal implementation (GREEN), when TDD applies.
 
-Split further if any cap would break. If a listed **Create** needs its own file (class/module), count that file in the plan — never design a slice that forces inlining to stay under the cap.
+**Catch-all smells** (split when you see one):
 
-## Architecture source
+- Create lists symbols with unrelated purposes, or more than ~2 new public symbols.
+- Do steps jump between unrelated areas (schema + UI + email sending in one slice).
+- Done when describes several unrelated outcomes.
+- One part of the slice could be accepted while another part is rejected.
 
-1. Use architecture already in the grill context / provided file / prompt.
-2. If incomplete, search the codebase to fill gaps.
-3. Never invent fake “existing” symbols.
+**Too-thin smells** (merge into the neighbour slice):
 
-**Create** must name classes, interfaces, and seam/adapter logic **only when a real boundary needs them** (e.g. payment provider). Otherwise keep concrete and thin: few layers — not a flat API that exposes internals. Prefer a real module/class over a fat inline blob when the behaviour has a clear responsibility; do not skip a Create file just to stay under the touch budget.
+- No observable behaviour on its own (a type or helper that nothing uses or tests yet).
+- Done when can only be checked once another slice lands.
 
-**Before naming** any Create class, file, method, or variable: check the repo’s naming conventions and follow them. Sources (in order): project rules (`AGENTS.md`, `.cursor/rules`, CONTRIBUTING), linter/formatter configs that encode style, then patterns already used in neighbouring or similar modules. Do not invent a naming style that conflicts with the codebase.
+## Research (mandatory before writing bodies)
 
-When a symbol *is* created, prefer a **deeper** module: small stable public surface that hides real complexity. Never invent extra types “to deepen.”
+The ticket can only pre-decide what you have verified. For each slice, establish from the real codebase (delegate to Explore sub-agents with focused questions and minimal-output answers to keep context small):
 
-Downstream slices that depend on upstream work must **Reuse** symbols the earlier issues create.
+1. **Architecture input:** grill decisions / provided file / prompt first, plus `CONTEXT.md` (domain vocabulary for naming) and `docs/adr/` when present; codebase fills the gaps. Reuse facts the grill already established instead of re-exploring them. Never invent fake "existing" symbols.
+2. **Reuse targets:** exact file path, symbol, current signature, and behaviour the slice relies on.
+3. **Insertion points:** where each Create lives (exact path) and who calls it.
+4. **Model to mirror:** the closest existing module doing something similar (structure, naming, error handling, DI, logging). Point the implementer at it.
+5. **Conventions:** project rules (`AGENTS.md`, `CLAUDE.md`, `.cursor/rules`, CONTRIBUTING, coding-standards docs), linter/formatter configs, then neighbouring code. Naming of classes, files, methods, variables follows these.
+6. **Test setup:** framework, test file location and naming, existing helpers/fixtures/factories/mocks, exact command to run a single test file.
+
+## Design rules (applied in the plan, not left to the implementer)
+
+- **Create** names classes, interfaces, and seam/adapter logic **only when a real boundary needs them** (payment provider, external API). Otherwise keep concrete and thin: few layers, not a flat API that exposes internals. Prefer a real module/class over a fat inline blob when the behaviour has a clear responsibility.
+- When a symbol is created, design it **deep**: small stable public surface that hides real complexity. State explicitly what is public, what is private, and what complexity it hides. Never invent extra types "to deepen".
+- SOLID, DRY (point at existing code to reuse instead of duplicating), simplest working code.
+- Check the planned design against the usual smells and fix it in the plan: Mysterious Name, Duplicated Code, Feature Envy, Data Clumps, Primitive Obsession, Repeated Switches, Shotgun Surgery, Divergent Change, Speculative Generality, Message Chains, Middle Man, Refused Bequest, Shallow Module.
+- Downstream slices that depend on upstream work must **Reuse** the exact symbols (paths + signatures) the earlier issues create.
 
 ## Structure
 
-- **Linear / GitHub:** one parent epic + child issues. Plain-text `Blocked by: …` on dependents.
+- **Linear / GitHub:** one parent epic + child issues. Plain-text `Blocked by: …` on dependents. Epic body: feature goal, slices in order with blockers, user decisions taken.
 - **Markdown:** ordered files under `docs/slices/<feature-slug>/` (prompt may override path) + explicit blockers.
 
-**Titles:** `[Feature] S1 — short goal` (epic = feature name).
+**Titles:** `[Feature] S1: short goal` (epic = feature name).
 
 ## Preview then create
 
-Default: show a **condensed** preview only — per slice: title + short architecture peek (reuse/create names). Wait for OK.
+Default: show a **condensed** preview only: per slice, title + short architecture peek (reuse/create names); then only the technical decisions you took on gaps the grill left open, and the open product questions if any (see **Who decides what**). Do not restate grill decisions. Wait for OK and answers.
 
-If the user says “create now” / “file it”, skip preview and create.
+If the user says "create now" / "file it", skip preview and create.
 
 Then create issues and return only URLs or file paths (plus epic link if any).
 
 ## Issue body (plain text only)
 
-No schemas, no tables, no diagrams. Deterministic: the implementer follows the plan.
+No schemas, no tables, no diagrams. Code blocks allowed for signatures, types, and non-obvious logic. Every path and symbol is exact. Deterministic: the implementer follows the plan and makes no design choice.
 
 ```
 Goal
 <one sentence>
 
 Done when
-<one concrete pass/fail check>
+<one concrete pass/fail check: user-facing check and/or exact test command>
+
+Context
+<why this brick exists, where it sits in the flow, what upstream slices already provide>
 
 Reuse
-- <existing symbol or file>
-- …
+- `path/to/file.ext` `symbol(signature)`: what this slice uses it for and how it is called
 
 Create
-- <new class/function/method>: <one-line purpose>
-- <interface/seam/adapter only if needed>: <one-line purpose>
+- `path/to/new_file.ext` `SymbolName`: <responsibility in one line>
+  - Public: `method(arg: Type): ReturnType`: <behaviour>
+  - Private: <helpers it keeps internal>
+  - Hides: <complexity callers never see>
+  - Depends on: <collaborators and how they are injected/obtained>
+  - Called by: <exact caller and call site>
+
+Design
+- Mirror: `path/to/similar_existing.ext` (follow its structure, naming, error handling, <anything specific>)
+- Logic:
+  1. <rule / step of the algorithm, in order>
+  2. …
+- Edge cases and errors:
+  - <input or state>: <exact behaviour: returned value, thrown error type + message, status code>
+- Decisions (grill decisions that apply to this slice, then decisions taken while planning):
+  - <chosen option> over <rejected option>: <reason>
+
+Tests
+- File: `path/to/test_file.ext` (run: `<exact command>`)
+- Reuse helpers/fixtures: `<symbol>` from `<path>`
+- Cases:
+  - `<test name>`: given <setup>, when <action>, then <expected>
+  - …
 
 Do
-1. Write the focused failing test for Done when (RED) — skip this step only if TDD clearly does not apply
-2. …
+1. Write the failing tests listed in Tests (RED); skip this step only if TDD clearly does not apply
+2. <imperative step: file + symbol + exact change>
 3. …
+N. Run `<exact command>`: all tests pass
 
 Do not
-- Violate SOLID or DRY
-- Add abstractions, files, or refactors not listed above
-- Make the code more complex than required — simplest working code is mandatory
-- Prefer deeper modules (narrow interface, hide complexity) when it does not add complexity or abstractions beyond this plan — simplest working code still wins
-- Inline or squash a listed Create into another file just to stay under the file cap — if Create needs a module/class file, create that file (ask before exceeding Touch limit)
-- Invent naming that conflicts with repo conventions (classes, files, methods, variables)
-- Implement production code before the failing focused test when TDD applies (must be RED → GREEN)
-- Exceed the touch limits for this slice without asking
+- <slice-specific trap the implementer could fall into: tempting shortcut, wrong layer, existing code that must stay untouched, behaviour that belongs to another slice>
+- …
 
-Touch limit
-- ≤6 files (excl. test), ≤2 new public symbols, 1 focused test, single concern
-- File count is a thinness guide: maintainable Create modules beat minimizing files
+Scope
+- One brick: <the single responsibility this slice owns>
+- Touch only code implied by Reuse / Create; anything else (extra files, symbols, behaviour): ask first
+- Automated tests: the cases listed in Tests (add more only for behaviour of this brick)
 ```
 
-Put the same Do not / Touch limit spirit into every issue so implementers cannot freestyle.
+Generic rules (no design decision outside the issue, ask before any divergence, SOLID/DRY/simplest code, no extra files/symbols, TDD order) are enforced by `implement`: do not repeat them in every ticket. **Do not** lists only what is specific to this slice; omit the section if nothing is.
+
+## Plan review (before filing)
+
+Once full bodies are drafted, spawn **one** reviewer sub-agent. Give it the drafted bodies and the research facts; it reads the referenced files directly (Reuse, Mirror, call sites) to verify them, without re-exploring the codebase broadly. It answers as `slice-review` would on the resulting code, findings only:
+
+- **Standards:** would faithful implementation breach repo docs, SOLID/DRY/simplicity, deep-module direction, or the smells above?
+- **Spec:** is anything left for the implementer to decide (missing path, signature, error behaviour, test case, banned vague word)? Do Reuse symbols and signatures exist as written? Do Do steps cover every Create and every test case? Does Done when actually prove Goal?
+- **Slicing:** one brick per slice, no catch-all or too-thin smell, blockers correct.
+
+Fix the plan for every finding, then file. Do not file a slice with an open finding.
 
 ## Workflow
 
 1. Read input (prompt, sentence, and/or markdown file).
 2. Resolve destination and team/repo.
-3. Split into thin slices; assign S1…Sn and blockers; carry architecture forward.
-4. Condensed preview (unless create-now).
-5. On confirmation, write full bodies and create epic + children (or markdown files).
-6. Stop. Report links/paths only.
+3. Research the codebase (see **Research**); run independent Explore questions in parallel.
+4. Split into cohesive logical bricks (check catch-all and too-thin smells); assign S1…Sn and blockers; carry architecture forward.
+5. Condensed preview with decisions and open questions (unless create-now; open questions are still asked).
+6. On confirmation, write full bodies with every design decision made (see **Design rules**).
+7. Plan review; fix findings.
+8. Create epic + children (or markdown files).
+9. Stop. Report links/paths only.
