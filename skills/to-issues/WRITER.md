@@ -6,15 +6,21 @@ Read `ARCHITECTURE.md` once, fully. Your inputs are in its annex: **Grill decisi
 
 ## Core principle
 
-The ticket is executed by a **less capable implementer** (e.g. Sonnet). It must reach the same result a strong model would, by following the ticket. So every decision is made **in the ticket**:
+The ticket is a set of **guardrails**, not a description of the code. It makes sure the implementer (e.g. Sonnet) respects the architecture validated in `to-architecture` and cannot drift from the technical decisions. How the code is written inside a module is the implementer's job.
 
-- If the implementer would have to **choose** something (file, name, signature, pattern, data flow, error handling, edge-case behaviour, test cases), the ticket decides it.
-- Anything a reviewer could flag (SOLID/DRY breach, shallow module, smell, naming conflict, missing edge case, wrong layer) is resolved in the ticket.
-- Target: the implemented code gets **little to no review feedback**.
+The ticket fixes (the implementer must not choose these):
 
-The public design (paths, interfaces, dependencies, call sites, slice scope) is fixed by `ARCHITECTURE.md`, and grill decisions are settled: apply them as is, never re-decide them. Your job: everything hidden inside the modules (private helpers, logic steps, edge cases, errors), the test cases, and the order of work.
+- **Where:** exact paths, the module each piece of code belongs to, the layer.
+- **Contract:** public signatures, call sites, dependencies and how they are obtained.
+- **Decisions:** grill and architecture decisions for this slice, each with the rejected option, so the implementer does not "improve" toward it.
+- **Observable behaviour:** business rules, edge cases and errors as seen from outside the module (return value, error type and message, status code).
+- **Proof:** the test cases.
 
-Banned in the body (each one hands a decision to the implementer): "e.g.", "maybe", "if needed", "as appropriate", "or similar", "something like", "handle errors properly", "add tests".
+The ticket leaves out (the implementer decides, following the Mirror file and repo conventions): private helpers, step-by-step logic, local names, statement order, how a query or loop is written. Never write them, even as prose.
+
+Test for every line: **if this line were missing, could the implementation contradict the architecture or a decision?** If not, delete it.
+
+Banned in the body (each one leaves a decision open): "e.g.", "maybe", "if needed", "as appropriate", "or similar", "something like", "handle errors properly", "add tests".
 
 ## Contract
 
@@ -22,22 +28,17 @@ Your slice's Create paths and public interfaces, and the upstream symbols you Re
 
 ## Research (your slice only)
 
-Shared facts and module entries are already researched: do not rediscover conventions, test setup, or the architecture. Read directly the files you need (no broad exploration):
+Shared facts and module entries are already researched: do not rediscover conventions, test setup, or the architecture. Read directly, and only to confirm what the ticket states:
 
-1. **Reuse targets:** confirm each signature and the behaviour relied on.
-2. **Insertion points:** the exact place of each Create and its call site.
-3. **Mirror:** the Mirror file named in the module entry (structure, naming, error handling, DI, logging).
-4. **Test helpers:** fixtures/factories/mocks this slice's tests reuse.
+1. **Reuse targets:** each signature exists as written and behaves as relied on.
+2. **Call sites:** each Called by location exists.
+3. **Test helpers:** fixtures/factories/mocks this slice's tests reuse.
 
-## Design rules (inside modules)
-
-- Keep the interface from the module entry; hide the complexity behind it. Never add public symbols, types, files, or seams the architecture does not list.
-- SOLID, DRY (point at existing code to reuse instead of duplicating), simplest working code. Naming follows repo conventions and `CONTEXT.md` vocabulary.
-- No smell in the planned code: Mysterious Name, Duplicated Code, Feature Envy, Data Clumps, Primitive Obsession, Repeated Switches, Shotgun Surgery, Divergent Change, Speculative Generality, Message Chains, Middle Man, Refused Bequest, Shallow Module.
+Do not study the Mirror file in detail: the implementer reads it.
 
 ## Body (plain text)
 
-Write in the language of `ARCHITECTURE.md`; keep the section headings below as is. No schemas, no tables, no diagrams. Code blocks only for signatures, types, and non-obvious logic. Every path and symbol exact. Say each thing **once**: Do points to Create / Design / Tests entries instead of repeating them.
+Write in the language of `ARCHITECTURE.md`; keep the section headings below as is. No schemas, no tables, no diagrams. Code only for signatures and types. Every path and symbol exact. Say each thing **once**. Aim for a ticket readable in 2 minutes.
 
 ```
 Summary
@@ -53,41 +54,31 @@ Context
 <1 or 2 lines: why this brick exists, what upstream slices provide>
 
 Reuse
-- `path/to/file.ext` `symbol(signature)`: how this slice uses it
+- `path/to/file.ext` `symbol(signature)`: what this slice relies on
 
 Create
-- `path/to/new_file.ext` `SymbolName`: <responsibility in one line>
-  - Public: `method(arg: Type): ReturnType`: <behaviour>
-  - Private: <helpers kept internal>
-  - Hides: <complexity callers never see>
+- `path/to/new_file.ext` `SymbolName` (<layer: deep module, adapter, entry point, data>): <responsibility in one line>
+  - Public: `method(arg: Type): ReturnType`
+  - Hides: <what stays inside, in a few words: callers never do it themselves>
   - Depends on: <collaborators and how they are obtained>
   - Called by: <exact caller and call site>
 
-Design
-- Mirror: `path/to/similar_existing.ext` (<what to copy from it>)
-- Logic:
-  1. <rule / algorithm step, in order>
-- Edge cases and errors:
-  - <input or state>: <exact behaviour: return value, error type + message, status code>
-- Decisions (grill decisions for this slice, then architecture decisions):
-  - <chosen option> over <rejected option>: <reason>
+Rules
+- Mirror: `path/to/similar_existing.ext`
+- <business rule or edge case>: <observable behaviour: return value, error type + message, status code>
+- <chosen option> over <rejected option>: <reason>
 
 Tests
 - File: `path/to/test_file.ext` (run: `<exact command>`)
 - Reuse helpers: `<symbol>` from `<path>`
 - Cases:
-  - `<test name>`: given <setup>, when <action>, then <expected>
-
-Do
-1. RED: write the Tests cases; run them: they fail
-2. <order of work, pointing to Create / Design entries; only details not already stated above>
-N. GREEN: run `<exact command>`: all pass
+  - `<test name>`: given <setup>, then <expected>
 
 Do not
-- <slice-specific trap only: tempting shortcut, wrong layer, code that must stay untouched, behaviour owned by another slice>
+- <slice-specific trap only: tempting shortcut, wrong layer, extra public symbol, code that must stay untouched, behaviour owned by another slice>
 ```
 
-Modified modules go under Create with `(modified)` after the path, listing only what changes. Omit **Do not** if the slice has no specific trap: generic rules are enforced by `implement`. Omit **Create** / **Reuse** if empty.
+Modified modules go under Create with `(modified)` after the path, listing only what changes in the contract. Omit **Do not** if the slice has no specific trap: generic rules are enforced by `implement`. Omit **Create** / **Reuse** if empty.
 
 ## Draft, self-review, publish once
 
@@ -96,10 +87,11 @@ Write the body **once, straight to a file**: never draft it in chat or thinking 
 - Markdown destination: write it at its final path.
 - Linear / GitHub: write it to your draft path.
 
-Then self-review that file against the real code, as `slice-review` would judge the resulting code:
+Then self-review that file:
 
-- **Standards:** would faithful implementation breach repo docs, SOLID/DRY/simplicity, the deep-module direction, or a smell above?
-- **Spec:** anything left for the implementer to decide (path, signature, error behaviour, test case, banned word)? Reuse symbols and signatures exist as written? Do covers every Create and test case? Done when proves Goal? Summary readable by a non-developer?
+- **Guardrails:** could a faithful implementation still break the architecture (wrong layer, extra public symbol, logic leaking into the caller, rejected option chosen)? Add the missing rule or Do not line.
+- **Excess:** any private helper, logic step, method body or code beyond signatures? Delete it.
+- **Spec:** Reuse symbols and signatures exist as written? Every grill decision of this slice is a Rule? Done when proves Goal? No banned word? Summary readable by a non-developer?
 - **Brick:** one responsibility, Goal without "and", testable on its own.
 
 Fix every finding with a targeted edit of the file. Do not continue with an open finding.

@@ -25,7 +25,7 @@ Sub-agent briefs stay short; final report stays under two tight sections + one s
 
 Do **not** report file counts: there is no file budget. Scope drift (code outside Reuse / Create, behaviour beyond Goal) is already covered by the Spec axis.
 
-**Plan vs implementation:** the ticket pre-decides the design, so a Standards finding can come from the ticket itself. Tag each finding `[plan]` when the code follows the ticket literally and the problem is in the ticket's design, `[impl]` otherwise. `[plan]` findings are fixed by amending the ticket (or with the user's approval), never by silently diverging from it; they also show where `to-architecture` / `to-issues` need to plan better.
+**Plan vs implementation:** the ticket locks the architecture and decisions (paths, layers, contracts, Rules); the code inside modules is the implementer's. Tag a finding `[plan]` when the code follows what the ticket locks and the problem is in that locked design, `[impl]` otherwise (including anything inside a module the ticket does not state). `[plan]` findings are fixed by amending the ticket (or with the user's approval), never by silently diverging from it; they also show where `to-architecture` / `to-issues` need to plan better.
 
 ## Process
 
@@ -47,7 +47,7 @@ Same rules as `implement`:
 2. Exactly one clear pointer in the message or focused file → use it.
 3. Else ask once.
 
-Fetch the full issue body. The spec **is** that body (Goal / Done when / Context / Reuse / Create / Design / Tests / Do / Do not). Do not use `docs/agents/issue-tracker.md` or generic PRDs unless the user points at them as the slice source.
+Fetch the full issue body. The spec **is** that body (Goal / Done when / Context / Reuse / Create / Rules / Tests / Do not; older tickets: Design / Do). Do not use `docs/agents/issue-tracker.md` or generic PRDs unless the user points at them as the slice source.
 
 If no slice issue is available and the user says there isn’t one, skip the Spec sub-agent and report “no slice spec”.
 
@@ -91,7 +91,7 @@ One message, two `Task` / general-purpose sub-agents.
 
 - Diff command(s) / WIP surface
 - Full slice issue body
-- Brief: "Read only the code needed to judge (touched files and their direct collaborators); no broad exploration. Then report: (a) Goal / Done when / Do steps missing or partial, Design rules (logic, edge cases, decisions, mirror file) not followed, listed Tests cases missing; (b) symbols/files not in Reuse or Create (freestyle); (c) Do not violations; (d) behaviour not asked for (scope creep); (e) listed Create/Reuse used wrongly. Quote the issue line for each finding. Skip file counts entirely. For each hard finding: what, issue line, why it matters for slice integrity (1–2 sentences). Under 350 words."
+- Brief: "Read only the code needed to judge (touched files and their direct collaborators); no broad exploration. Then report: (a) Goal / Done when missing or partial, Rules (behaviour, edge cases, errors, chosen options, mirror file) not followed, listed Tests cases missing; (b) files or public symbols not in Reuse or Create (freestyle; private helpers inside a Create module are fine), code placed in another layer than the ticket says, work a module Hides done by its caller; (c) Do not violations; (d) behaviour not asked for (scope creep); (e) listed Create/Reuse used wrongly. Quote the issue line for each finding. Skip file counts entirely. For each hard finding: what, issue line, why it matters for slice integrity (1–2 sentences). Under 350 words."
 
 Skip Spec sub-agent if no slice spec.
 

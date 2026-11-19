@@ -2,9 +2,9 @@
 name: to-issues
 description: >-
   Turn a validated ARCHITECTURE.md (produced by to-architecture) into
-  implementation-ready vertical-slice tickets (Linear, GitHub Issues, or
-  markdown) where everything is pre-decided, so a smaller model implements them
-  without design choices. Use when the user asks to create issues, tickets, or
+  vertical-slice tickets (Linear, GitHub Issues, or markdown) that lock the
+  architecture and technical decisions, so a smaller model implements them
+  without drifting. Use when the user asks to create issues, tickets, or
   slices, typically with the path printed by to-architecture.
 ---
 
@@ -20,7 +20,7 @@ The path to an `ARCHITECTURE.md` produced and validated by `to-architecture`. It
 
 ## Core principle
 
-Tickets are executed by a **less capable implementer agent** (e.g. Sonnet). Everything is decided in the ticket: the implementer only executes, and asks before any divergence. The user does not read tickets beyond their Summary. A review finding on a faithfully implemented ticket is a planning bug.
+Tickets are executed by a **less capable implementer agent** (e.g. Sonnet). A ticket locks the architecture and the technical decisions (paths, contracts, layers, rules, rejected options, test cases) and does not describe the code inside modules: the implementer writes it, and asks before any divergence from what is locked. The user does not read tickets beyond their Summary. An architecture or decision breach on a faithfully implemented ticket is a planning bug.
 
 The architecture is settled: never re-decide, re-slice, or re-research it, and do not explore the codebase yourself. Writers research only their own slice.
 
