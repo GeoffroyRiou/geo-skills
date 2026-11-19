@@ -46,7 +46,7 @@ Spawn an **Explore** sub-agent only for a question the issue does not answer and
 
 ## Fidelity
 
-1. **Implement exactly** Goal / Context / Reuse / Create / Design / Tests / Do / Do not / Scope. The design is final: paths, signatures, public/private split, Mirror pattern, Logic, edge-case behaviour, Decisions, test cases. Do not redesign, rename, or pick an alternative you prefer. Copy the Mirror file's structure and conventions.
+1. **Implement exactly** Goal / Context / Reuse / Create / Design / Tests / Do / Do not (sections may be omitted when empty). The design is final: paths, signatures, public/private split, Mirror pattern, Logic, edge-case behaviour, Decisions, test cases. Do not redesign, rename, or pick an alternative you prefer. Copy the Mirror file's structure and conventions.
 2. **Any divergence from the plan: ask first.** If the plan cannot be followed exactly, or following it would be wrong (a Reuse symbol or signature does not exist as written, the Mirror file contradicts the plan, a Logic rule conflicts with the real code, a test case cannot pass as specified, a decision is missing, extra files/symbols/behaviour are needed), stop **before** writing the divergent code and ask: what the issue says, what the code shows, options, your recommendation. Never diverge silently, even when the fix looks obvious. Resume only with the user's answer.
 3. Only exception: a pure typo in the issue (a path or symbol misspelled that unambiguously matches exactly one existing file or symbol). Fix it and list it under Deviations.
 

@@ -25,7 +25,7 @@ Sub-agent briefs stay short; final report stays under two tight sections + one s
 
 Do **not** report file counts: there is no file budget. Scope drift (code outside Reuse / Create, behaviour beyond Goal) is already covered by the Spec axis.
 
-**Plan vs implementation:** the ticket pre-decides the design, so a Standards finding can come from the ticket itself. Tag each finding `[plan]` when the code follows the ticket literally and the problem is in the ticket's design, `[impl]` otherwise. `[plan]` findings are fixed by amending the ticket (or with the user's approval), never by silently diverging from it; they also show where `to-issues` needs to plan better.
+**Plan vs implementation:** the ticket pre-decides the design, so a Standards finding can come from the ticket itself. Tag each finding `[plan]` when the code follows the ticket literally and the problem is in the ticket's design, `[impl]` otherwise. `[plan]` findings are fixed by amending the ticket (or with the user's approval), never by silently diverging from it; they also show where `to-architecture` / `to-issues` need to plan better.
 
 ## Process
 
@@ -47,7 +47,7 @@ Same rules as `implement`:
 2. Exactly one clear pointer in the message or focused file → use it.
 3. Else ask once.
 
-Fetch the full issue body. The spec **is** that body (Goal / Done when / Context / Reuse / Create / Design / Tests / Do / Do not / Scope). Do not use `docs/agents/issue-tracker.md` or generic PRDs unless the user points at them as the slice source.
+Fetch the full issue body. The spec **is** that body (Goal / Done when / Context / Reuse / Create / Design / Tests / Do / Do not). Do not use `docs/agents/issue-tracker.md` or generic PRDs unless the user points at them as the slice source.
 
 If no slice issue is available and the user says there isn’t one, skip the Spec sub-agent and report “no slice spec”.
 
