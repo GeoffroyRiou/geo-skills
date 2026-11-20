@@ -27,6 +27,7 @@ The architecture is settled: never re-decide, re-slice, or re-research it, and d
 ## Token economy
 
 - Give sub-agents paths, never pasted content.
+- An agent's cost is its number of turns times its context size. Writers verify in a few batched reads, never one grep per turn (see `WRITER.md`).
 - Drafts live in `/tmp/geo-skills/<feature-slug>/`, next to `ARCHITECTURE.md`. Each ticket is published once from its draft, never created then re-read and updated.
 - Chat output: links only.
 
@@ -50,7 +51,7 @@ The architecture is settled: never re-decide, re-slice, or re-research it, and d
 
 1. Read `ARCHITECTURE.md` once. Resolve destination and team/repo.
 2. Create the epic (Linear/GitHub) to get its id; Markdown: create the folder.
-3. Spawn **one writer sub-agent per slice, all in one message** (general-purpose, do not override the model: writers need the same reasoning quality as you). Give each only:
+3. Spawn **one writer sub-agent per slice, all in one message** (general-purpose, `model: "sonnet"`: the design is locked, writers transcribe and verify it). Give each only:
    - the absolute path of `WRITER.md` (next to this file) and of `ARCHITECTURE.md`;
    - its slice id;
    - the destination: tracker, team/repo, epic id, labels, exact title, Blocked by line, and for Markdown the final file path;
@@ -60,6 +61,7 @@ The architecture is settled: never re-decide, re-slice, or re-research it, and d
 4. **Cross-slice check**, from the writers' returns only (never re-read the tickets):
    - `CONTRACT` and `REUSES_UPSTREAM` match the annex; every downstream Reuse matches an upstream Create exactly.
    - `CONTRACT_ISSUE`: the architecture is wrong on that point. Stop and tell the user in 2 or 3 lines what is wrong and the fix you propose. After approval: targeted edit of `ARCHITECTURE.md`, re-spawn that writer, and for each already-filed ticket referencing the changed symbol, a writer that makes a targeted edit to its draft and republishes it (continue the original writer if possible: it keeps its context).
+   - `UNVERIFIED`: check each listed symbol with one targeted `codegraph_explore` (your only code reading). Wrong: handle it as a `CONTRACT_ISSUE`.
    - Any other mismatch: same targeted draft edit and republish for the affected ticket.
 5. GitHub only: one edit of the epic body to turn slice titles into issue links (Linear lists sub-issues natively).
 6. Stop. Report only the URLs or file paths (epic first).

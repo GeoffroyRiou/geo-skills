@@ -36,6 +36,8 @@ Shared facts and module entries are already researched: do not rediscover conven
 
 Do not study the Mirror file in detail: the implementer reads it.
 
+How: one `codegraph_explore` naming every Reuse symbol, call site and test helper of your slice at once, then only the follow-up reads it leaves open, batched (parallel Reads in one message). Never one grep per turn. Budget: about 8 tool calls for research. It is a checkpoint, not a hard stop: at the budget, stop researching and list what you could not confirm in `UNVERIFIED`, never guess. A confirmed conflict with the annex is a `CONTRACT_ISSUE`, not an `UNVERIFIED`.
+
 ## Body (plain text)
 
 Write in the language of `ARCHITECTURE.md`; keep the section headings below as is. No schemas, no tables, no diagrams. Code only for signatures and types. Every path and symbol exact. Say each thing **once**. Aim for a ticket readable in 2 minutes.
@@ -104,6 +106,7 @@ Then publish once (Linear / GitHub): GitHub `gh issue create --body-file <draft 
 FILED: <url or path>
 CONTRACT: <each Create path + public signature, as filed>
 REUSES_UPSTREAM: <each upstream symbol used, as filed>
+UNVERIFIED: <symbols or call sites you could not confirm, or none>
 ```
 
 Or `CONTRACT_ISSUE: …` if you did not file.
